@@ -51,9 +51,19 @@
                             							
                             <tool id="cdt.managedbuild.tool.gnu.c.compiler.exe.debug.949523546" name="GCC C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.exe.debug">
                                 								
-                                <option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.exe.debug.option.optimization.level.154297126" name="Optimization Level" superClass="gnu.c.compiler.exe.debug.option.optimization.level" valueType="enumerated"/>
+                                <option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.exe.debug.option.optimization.level.154297126" name="Optimization Level" superClass="gnu.c.compiler.exe.debug.option.optimization.level" value="gnu.c.optimization.level.more" valueType="enumerated"/>
                                 								
                                 <option id="gnu.c.compiler.exe.debug.option.debugging.level.1199260139" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
+                                								
+                                <option id="gnu.c.compiler.option.include.paths.605438097" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/frogFS}&quot;"/>
+                                    								
+                                </option>
+                                								
+                                <option id="gnu.c.compiler.option.dialect.std.122313984" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
+                                								
+                                <option id="gnu.c.compiler.option.warnings.extrawarn.1619024848" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1416594235" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
                                 							
@@ -74,6 +84,12 @@
                             <tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.412919949" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug"/>
                             							
                             <tool id="cdt.managedbuild.tool.gnu.assembler.exe.debug.457857800" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.debug">
+                                								
+                                <option id="gnu.both.asm.option.include.paths.1333220894" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/frogFS}&quot;"/>
+                                    								
+                                </option>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.assembler.input.1245723179" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
                                 							
@@ -143,6 +159,12 @@
                                 								
                                 <option id="gnu.c.compiler.exe.release.option.debugging.level.867402962" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
                                 								
+                                <option id="gnu.c.compiler.option.include.paths.2112436562" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/frogFS}&quot;"/>
+                                    								
+                                </option>
+                                								
                                 <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.2130785715" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
                                 							
                             </tool>
@@ -162,6 +184,12 @@
                             <tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.release.385722114" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.release"/>
                             							
                             <tool id="cdt.managedbuild.tool.gnu.assembler.exe.release.1759223691" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.exe.release">
+                                								
+                                <option id="gnu.both.asm.option.include.paths.2083739063" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+                                    									
+                                    <listOptionValue builtIn="false" value="&quot;${workspace_loc:/frogFS}&quot;"/>
+                                    								
+                                </option>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.assembler.input.116909626" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
                                 							
