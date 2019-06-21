@@ -497,11 +497,11 @@ int test_0_byte_record(void)
  * - read non-opened file
  * - write maximum storage record, read and finally try to add new record
  * - fragmentation test: worst case 1-byte data fragments (with initial EEPROM image)
+ * - test frogfs_find_contiguous_space in A) filesystem empty B) filesystem full C) other mixed cases...
  */
 
 int main(void)
 {
-    // TODO: test frogfs_find_contiguous_space in A) filesystem empty B) filesystem full C) other mixed cases...
     t_e_frogfs_error fserr;
 
     /* Initialize the stdio-file storage backend for FrogFS */
