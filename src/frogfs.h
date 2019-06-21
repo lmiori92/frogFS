@@ -59,9 +59,8 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
 t_e_frogfs_error frogfs_close(uint8_t record);
 t_e_frogfs_error frogfs_erase_range(uint16_t pos, uint16_t size);
 t_e_frogfs_error frogfs_erase(uint8_t record);
-t_e_frogfs_error frogfs_traverse(uint8_t record, uint16_t rsize, uint8_t *data, uint16_t size, bool erase);
-t_e_frogfs_error frogfs_read(uint8_t record, uint16_t rsize, uint8_t *data, uint16_t size);
-
+t_e_frogfs_error frogfs_read(uint8_t record, uint8_t *data, uint16_t size, uint16_t *effective_read);
+t_e_frogfs_error frogfs_traverse(uint8_t record, uint8_t *data, uint16_t size, uint16_t *effective_read, bool erase);
 void printf_frogfserror(t_e_frogfs_error errno);
 
 #endif /* FROGFS_H_ */

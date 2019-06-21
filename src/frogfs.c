@@ -732,15 +732,16 @@ t_e_frogfs_error frogfs_erase_range(uint16_t pos, uint16_t size)
 
 // work_reg_1: block start
 // work_reg_2: block size
-t_e_frogfs_error frogfs_traverse(uint8_t record, uint16_t rsize, uint8_t *data, uint16_t size, bool erase)
+t_e_frogfs_error frogfs_traverse(uint8_t record, uint8_t *data, uint16_t size, uint16_t *effective_read, bool erase)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     uint8_t tmp[3];
-    uint16_t effective_read = 0;
     uint16_t tmp_read_size = 0;
     bool io_error = false;
     bool exit_loop = false;
     uint8_t record_index;
+
+    *effective_read = 0;
 
     FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, record, size);
 
@@ -860,17 +861,17 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint16_t rsize, uint8_t *data, 
                             /* not erasing but reading */
 
                             /* read the data: min between block size and remaining data */
-                            tmp_read_size = (rsize < frogfs_RAM[record].work_reg_2) ? rsize : frogfs_RAM[record].work_reg_2;
+                            tmp_read_size = (size < frogfs_RAM[record].work_reg_2) ? size : frogfs_RAM[record].work_reg_2;
 
                             /* read from disk */
                             if (data != NULL)
                             {
-                                retval = storage_read(&data[effective_read], tmp_read_size);
+                                retval = storage_read(&data[*effective_read], tmp_read_size);
                             }
                         }
 
                         /* advance the effective read counter */
-                        effective_read += tmp_read_size;
+                        *effective_read += tmp_read_size;
 
                         if (retval != FROGFS_ERR_OK)
                         {
@@ -922,11 +923,11 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint16_t rsize, uint8_t *data, 
                             /* Erase the record */
                             retval = frogfs_erase_range(frogfs_RAM[record].offset, 3U);
                             /* fake the rsize, iterating until all the record has been traversed */
-                            rsize = 0xFFFFU;
+                            size = 0xFFFFU;
                         }
                     }
                 }
-            } while ((effective_read < rsize) && (io_error == false) && (exit_loop == false));
+            } while ((*effective_read < size) && (io_error == false) && (exit_loop == false));
         }
     }
     else
@@ -938,20 +939,21 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint16_t rsize, uint8_t *data, 
     return retval;
 }
 
-t_e_frogfs_error frogfs_read(uint8_t record, uint16_t rsize, uint8_t *data, uint16_t size)
+t_e_frogfs_error frogfs_read(uint8_t record, uint8_t *data, uint16_t size, uint16_t *effective_read)
 {
-    return frogfs_traverse(record, rsize, data, size, false);
+    return frogfs_traverse(record, data, size, effective_read, false);
 }
 
 t_e_frogfs_error frogfs_erase(uint8_t record)
 {
     t_e_frogfs_error retval;
+    uint16_t effective_erased = 0;
 
     retval = frogfs_open(record);
 
     if (retval == FROGFS_ERR_OK)
     {
-        retval = frogfs_traverse(record, 0, NULL, 0, true);
+        retval = frogfs_traverse(record, NULL, 0, &effective_erased, true);
 
         if (retval == FROGFS_ERR_OK)
         {

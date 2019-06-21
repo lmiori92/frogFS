@@ -60,6 +60,7 @@ int test_contiguous(void)
 {
     t_e_frogfs_error fserr;
     uint16_t i = 0;
+    uint16_t effective_read = 0;
 
     printf("Formatting media\r\n");
     fserr = frogfs_format();
@@ -94,7 +95,7 @@ int test_contiguous(void)
 
         /* Read the record */
         (void)memset(read_buffer, 0, sizeof(read_buffer));
-        fserr = frogfs_read(i, sizeof(read_buffer), read_buffer, sizeof(read_buffer));
+        fserr = frogfs_read(i, read_buffer, sizeof(read_buffer), &effective_read);
         printf_frogfserror(fserr);
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
@@ -107,6 +108,7 @@ int test_contiguous(void)
         int result = memcmp(read_buffer, TEST_CONTENT, strlen(TEST_CONTENT));
 
         FROGFS_ASSERT_VERBOSE(result, 0, "content does not match.");
+        FROGFS_ASSERT_VERBOSE(effective_read, strlen(TEST_CONTENT), "length does not match.");
     }
 
     return 0;
@@ -121,6 +123,7 @@ int test_contiguous_and_remove(void)
 {
     t_e_frogfs_error fserr;
     uint16_t i = 0;
+    uint16_t effective_read = 0;
 
     printf("Formatting media\r\n");
     fserr = frogfs_format();
@@ -157,7 +160,7 @@ int test_contiguous_and_remove(void)
 
         /* Read the record */
         (void)memset(read_buffer, 0, sizeof(read_buffer));
-        fserr = frogfs_read(i, sizeof(read_buffer), read_buffer, sizeof(read_buffer));
+        fserr = frogfs_read(i, read_buffer, sizeof(read_buffer), &effective_read);
         printf_frogfserror(fserr);
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
@@ -169,6 +172,7 @@ int test_contiguous_and_remove(void)
         /* Compare the read data */
         int result = memcmp(read_buffer, TEST_CONTENT, strlen(TEST_CONTENT));
         FROGFS_ASSERT_VERBOSE(result, 0, "content does not match.");
+        FROGFS_ASSERT_VERBOSE(effective_read, strlen(TEST_CONTENT), "length does not match.");
 
         /* Remove the record */
         fserr = frogfs_erase(i);
@@ -185,6 +189,7 @@ int test_contiguous_and_remove_at_end(void)
 {
     t_e_frogfs_error fserr;
     uint16_t i = 0;
+    uint16_t effective_read = 0;
 
     printf("Formatting media\r\n");
     fserr = frogfs_format();
@@ -221,7 +226,7 @@ int test_contiguous_and_remove_at_end(void)
 
         /* Read the record */
         (void)memset(read_buffer, 0, sizeof(read_buffer));
-        fserr = frogfs_read(i, sizeof(read_buffer), read_buffer, sizeof(read_buffer));
+        fserr = frogfs_read(i, read_buffer, sizeof(read_buffer), &effective_read);
         printf_frogfserror(fserr);
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
@@ -233,6 +238,7 @@ int test_contiguous_and_remove_at_end(void)
         /* Compare the read data */
         int result = memcmp(read_buffer, TEST_CONTENT, strlen(TEST_CONTENT));
         FROGFS_ASSERT_VERBOSE(result, 0, "content does not match.");
+        FROGFS_ASSERT_VERBOSE(effective_read, strlen(TEST_CONTENT), "length does not match.");
     }
 
     for (i = 0; i < FROGFS_MAX_RECORD_COUNT; i++)
@@ -257,6 +263,7 @@ void test_reopen(void)
 {
     t_e_frogfs_error fserr;
     uint8_t i = 0;
+    uint16_t effective_read = 0;
 
     fserr = frogfs_init();
     printf_frogfserror(fserr);
@@ -271,7 +278,7 @@ void test_reopen(void)
 
         /* Read the record */
         (void)memset(read_buffer, 0, sizeof(read_buffer));
-        fserr = frogfs_read(i, sizeof(read_buffer), read_buffer, sizeof(read_buffer));
+        fserr = frogfs_read(i, read_buffer, sizeof(read_buffer), &effective_read);
         printf_frogfserror(fserr);
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
@@ -283,12 +290,14 @@ void test_reopen(void)
         /* Compare the read data */
         int result = memcmp(read_buffer, TEST_CONTENT, strlen(TEST_CONTENT));
         FROGFS_ASSERT_VERBOSE(result, 0, "content does not match.");
+        FROGFS_ASSERT_VERBOSE(effective_read, strlen(TEST_CONTENT), "length does not match.");
     }
 }
 
 void test_record_limit(void)
 {
     t_e_frogfs_error fserr;
+    uint16_t effective_read = 0;
 
     fserr = frogfs_open(FROGFS_MAX_RECORD_COUNT);
     FROGFS_ASSERT(FROGFS_ERR_INVALID_RECORD, fserr);
@@ -296,10 +305,10 @@ void test_record_limit(void)
     fserr = frogfs_write(FROGFS_MAX_RECORD_COUNT, NULL, 0);
     FROGFS_ASSERT(FROGFS_ERR_INVALID_RECORD, fserr);
 
-    fserr = frogfs_traverse(FROGFS_MAX_RECORD_COUNT, 0, NULL, 0, false);
+    fserr = frogfs_traverse(FROGFS_MAX_RECORD_COUNT, NULL, 0, &effective_read, false);
     FROGFS_ASSERT(FROGFS_ERR_INVALID_RECORD, fserr);
 
-    fserr = frogfs_read(FROGFS_MAX_RECORD_COUNT, 0, NULL, 0);
+    fserr = frogfs_read(FROGFS_MAX_RECORD_COUNT, NULL, 0, &effective_read);
     FROGFS_ASSERT(FROGFS_ERR_INVALID_RECORD, fserr);
 
     fserr = frogfs_close(FROGFS_MAX_RECORD_COUNT);
@@ -309,6 +318,7 @@ void test_record_limit(void)
 void test_reopen_files(uint8_t index_record_start, uint8_t index_record_end)
 {
     t_e_frogfs_error fserr;
+    uint16_t effective_read = 0;
 
     for (;index_record_start <= index_record_end; index_record_start++)
     {
@@ -320,13 +330,14 @@ void test_reopen_files(uint8_t index_record_start, uint8_t index_record_end)
 
         /* Read the record */
         (void)memset(read_buffer, 0, sizeof(read_buffer));
-        fserr = frogfs_read(index_record_start, sizeof(read_buffer), read_buffer, sizeof(read_buffer));
+        fserr = frogfs_read(index_record_start, read_buffer, sizeof(read_buffer), &effective_read);
         printf_frogfserror(fserr);
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
         /* Compare the read data */
         int result = memcmp(read_buffer, TEST_CONTENT, strlen(TEST_CONTENT));
         FROGFS_ASSERT_VERBOSE(result, 0, "content does not match.");
+        FROGFS_ASSERT_VERBOSE(effective_read, strlen(TEST_CONTENT), "length does not match.");
 
         /* Close the record */
         fserr = frogfs_close(index_record_start);
@@ -429,6 +440,7 @@ void test_fragmentation()
 int test_0_byte_record(void)
 {
     t_e_frogfs_error fserr;
+    uint16_t effective_read = UINT16_MAX;
 
     printf("Formatting media\r\n");
     fserr = frogfs_format();
@@ -453,16 +465,37 @@ int test_0_byte_record(void)
     printf_frogfserror(fserr);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
+    /* Filesystem is ready: open record */
+    fserr = frogfs_open(0);
+    printf_frogfserror(fserr);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    /* Read: expect 0 bytes */
+    (void)memset(read_buffer, 0, sizeof(read_buffer));
+    fserr = frogfs_read(0, read_buffer, sizeof(read_buffer), &effective_read);
+    printf_frogfserror(fserr);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    /* Close the record */
+    fserr = frogfs_close(0);
+    printf_frogfserror(fserr);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    /* Compare the read data */
+    for(uint16_t i = 0; i < sizeof(read_buffer); i++)
+    {
+        FROGFS_ASSERT_VERBOSE(read_buffer[i], 0U, "content does not match.");
+    }
+
+    FROGFS_ASSERT_VERBOSE(effective_read, 0, "length does not match.");
+
     return 0;
 }
 
 /* TODO tests to be implemented:
- * - write 0 byte record
- * - read 0 byte record
  * - write non-opened file
  * - read non-opened file
  * - write maximum storage record
- * -
  */
 
 int main(void)
