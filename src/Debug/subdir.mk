@@ -4,16 +4,13 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../frogfs.c \
-../main.c 
+../frogfs.c 
 
 OBJS += \
-./frogfs.o \
-./main.o 
+./frogfs.o 
 
 C_DEPS += \
-./frogfs.d \
-./main.d 
+./frogfs.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes

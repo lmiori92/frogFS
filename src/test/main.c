@@ -495,7 +495,8 @@ int test_0_byte_record(void)
 /* TODO tests to be implemented:
  * - write non-opened file
  * - read non-opened file
- * - write maximum storage record
+ * - write maximum storage record, read and finally try to add new record
+ * - fragmentation test: worst case 1-byte data fragments (with initial EEPROM image)
  */
 
 int main(void)
