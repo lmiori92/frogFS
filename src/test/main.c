@@ -500,7 +500,7 @@ int test_0_byte_record(void)
  * - test frogfs_find_contiguous_space in A) filesystem empty B) filesystem full C) other mixed cases...
  */
 
-int main(void)
+int frogfs_execute_test(void)
 {
     t_e_frogfs_error fserr;
 
@@ -522,3 +522,11 @@ int main(void)
 
     return 0;
 }
+
+#ifdef __linux__
+/* Execute tests on a hosted linux platform */
+int main(void)
+{
+    return frogfs_execute_test();
+}
+#endif
