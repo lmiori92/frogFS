@@ -34,7 +34,7 @@
 uint8_t *eeprom_image = NULL;
 FILE *eeprom_handle = NULL;
 
-#define FILE_STORAGE_HANDLE_NULL_CHECK(handle)  do              \
+#define NULL_PTR_CHECK_RETURN(handle)  do              \
                                                 {               \
                                                     if (handle == NULL) return FROGFS_ERR_NULL_POINTER; \
                                                 } while(0);     \
@@ -90,7 +90,7 @@ t_e_frogfs_error storage_advance(uint16_t size)
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     int fretval;
 
-    FILE_STORAGE_HANDLE_NULL_CHECK(eeprom_handle);
+    NULL_PTR_CHECK_RETURN(eeprom_handle);
 
     fretval = fseek(eeprom_handle, size, SEEK_CUR);
 
@@ -107,8 +107,8 @@ t_e_frogfs_error storage_pos(uint16_t *offset)
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     int fretval;
 
-    FILE_STORAGE_HANDLE_NULL_CHECK(offset);
-    FILE_STORAGE_HANDLE_NULL_CHECK(eeprom_handle);
+    NULL_PTR_CHECK_RETURN(offset);
+    NULL_PTR_CHECK_RETURN(eeprom_handle);
 
     fretval = ftell(eeprom_handle);
 
@@ -126,7 +126,7 @@ t_e_frogfs_error storage_end_of_storage(void)
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     int fretval;
 
-    FILE_STORAGE_HANDLE_NULL_CHECK(eeprom_handle);
+    NULL_PTR_CHECK_RETURN(eeprom_handle);
 
     fretval = ftell(eeprom_handle);
 
@@ -143,7 +143,7 @@ t_e_frogfs_error storage_seek(uint16_t offset)
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     int fretval;
 
-    FILE_STORAGE_HANDLE_NULL_CHECK(eeprom_handle);
+    NULL_PTR_CHECK_RETURN(eeprom_handle);
 
     fretval = fseek(eeprom_handle, offset, SEEK_SET);
 
@@ -160,8 +160,8 @@ t_e_frogfs_error storage_read(uint8_t *data, uint16_t size)
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     int fretval;
 
-    FILE_STORAGE_HANDLE_NULL_CHECK(data);
-    FILE_STORAGE_HANDLE_NULL_CHECK(eeprom_handle);
+    NULL_PTR_CHECK_RETURN(data);
+    NULL_PTR_CHECK_RETURN(eeprom_handle);
 
     fretval = fread(data, 1, size, eeprom_handle);
 
@@ -179,8 +179,8 @@ t_e_frogfs_error storage_write(const uint8_t *data, uint16_t size)
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     int fretval;
 
-    FILE_STORAGE_HANDLE_NULL_CHECK(data);
-    FILE_STORAGE_HANDLE_NULL_CHECK(eeprom_handle);
+    NULL_PTR_CHECK_RETURN(data);
+    NULL_PTR_CHECK_RETURN(eeprom_handle);
 
     fretval = fwrite(data, 1, size, eeprom_handle);
 
