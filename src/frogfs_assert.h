@@ -8,30 +8,47 @@
 #ifndef FROGFS_ASSERT_H_
 #define FROGFS_ASSERT_H_
 
-#define FROGFS_DEBUG_VERBOSE(...)      do { printf("line\t%d:\t", __LINE__); \
-                                             printf(__VA_ARGS__);           \
-                                             printf("\n");                  \
+#ifdef __AVR__
+#include <stdio.h>
+#include <avr/pgmspace.h>
+#define FROGFS_DEBUG_STR_MEM(x)     PSTR(x)
+#define FROGFS_PRINTF               printf_P      /**< AVR program space printf variant */
+#else
+#define FROGFS_DEBUG_STR_MEM(x)     x           /**< Normal hosted string memory space */
+#define FROGFS_PRINTF               printf      /**< Normal hosted printfs */
+#endif
+
+#define FROGFS_DEBUG_VERBOSE(fmt, ...)      do {  FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("line\t%d:\t"), __LINE__); \
+                                             FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM(fmt), ## __VA_ARGS__);           \
+                                             FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
                                         } while(0);
 
 #define FROGFS_ASSERT(x,y,...)             do { uint32_t line = __LINE__;           \
                                                   if (x != y)                        \
                                                   {                                  \
-                                                      printf("assertion failed at line %d: ", line); \
-                                                      printf("was %08x, expected %08x", (uint32_t)x, (uint32_t)y);  \
-                                                      printf("\n");                  \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("assertion failed at line %lu: "), line); \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("was %08lx, expected %08lx"), (uint32_t)x, (uint32_t)y);  \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
                                                       exit(1);                       \
                                                   }                                  \
                                              }while(0);
 
-#define FROGFS_ASSERT_VERBOSE(x,y,...)      do { uint32_t line = __LINE__;          \
+#define FROGFS_ASSERT_VERBOSE(x,y,fmt,...)      do { uint32_t line = __LINE__;          \
                                                   if (x != y)                        \
                                                   {                                  \
-                                                      printf("assertion failed at line %d: ", line); \
-                                                      printf(__VA_ARGS__);           \
-                                                      printf("was %08x, expected %08x", (uint32_t)x, (uint32_t)y);  \
-                                                      printf("\n");                  \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("assertion failed at line %lu: "), line); \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM(fmt), ## __VA_ARGS__);           \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("was %08lx, expected %08lx"), (uint32_t)x, (uint32_t)y);  \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
                                                       exit(1);                       \
                                                   }                                  \
+                                             }while(0);
+
+#define FROGFS_ASSERT_UNCHECKED(fmt,...)      do { uint32_t line = __LINE__;          \
+                                                  FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("assertion failed at line %lu: "), line); \
+                                                  FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM(fmt), ## __VA_ARGS__);           \
+                                                  FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
+                                                  exit(1);                       \
                                              }while(0);
 
 #endif /* FROGFS_ASSERT_H_ */

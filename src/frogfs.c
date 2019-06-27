@@ -145,7 +145,8 @@ t_e_frogfs_error frogfs_format(void)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     uint8_t tmp[16];
-    uint16_t pos;
+    uint16_t disk_size;
+    uint8_t to_write;
 
     (void)memset(tmp, 0, sizeof(tmp));
 
@@ -156,35 +157,38 @@ t_e_frogfs_error frogfs_format(void)
     }
 
     /* Erase all the disk */
-    uint16_t disk_size = storage_size();
+    disk_size = storage_size();
     do
     {
-        retval = storage_write(tmp, sizeof(tmp));
-        if (disk_size > sizeof(tmp))
+        if (disk_size >= sizeof(tmp))
         {
-            disk_size -= sizeof(tmp);
+            to_write = sizeof(tmp);
         }
         else
         {
-            disk_size = 0U;
+            to_write = disk_size;
         }
-        storage_pos(&pos);
-    } while ((retval == FROGFS_ERR_OK) && (pos < (disk_size -1)));
-
-    /* Prepare the signature and version */
-    tmp[0] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE      ) & 0xFFUL);
-    tmp[1] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE >> 8 ) & 0xFFUL);
-    tmp[2] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE >> 16) & 0xFFUL);
-    tmp[3] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE >> 24) & 0xFFUL);
-    tmp[4] = FROGFS_VERSION;
-
-    /* Go to the beginning of the storage */
-    retval = storage_seek(0);
+        retval = storage_write(tmp, to_write);
+        disk_size -= (uint8_t)to_write;
+    } while ((retval == FROGFS_ERR_OK) && (disk_size > 0));
 
     if (retval == FROGFS_ERR_OK)
     {
-        /* Write the header */
-        retval = storage_write(tmp, 5);
+        /* Prepare the signature and version */
+        tmp[0] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE      ) & 0xFFUL);
+        tmp[1] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE >> 8 ) & 0xFFUL);
+        tmp[2] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE >> 16) & 0xFFUL);
+        tmp[3] = (uint8_t)((uint32_t)(FROGFS_SIGNATURE >> 24) & 0xFFUL);
+        tmp[4] = FROGFS_VERSION;
+
+        /* Go to the beginning of the storage */
+        retval = storage_seek(0);
+
+        if (retval == FROGFS_ERR_OK)
+        {
+            /* Write the header */
+            retval = storage_write(tmp, 5);
+        }
     }
 
     return retval;
@@ -246,6 +250,7 @@ t_e_frogfs_error frogfs_init(void)
             do
             {
                 retval = storage_read(tmp, 3);
+
                 if (retval == FROGFS_ERR_OK)
                 {
                     nil = frogfs_is_nil(tmp, sizeof(tmp));
@@ -323,8 +328,7 @@ t_e_frogfs_error frogfs_init(void)
                         else
                         {
                             /* record not supported. */
-                            printf("assertion failed. Invalid record found.\r\n");
-                            exit(1);
+                            FROGFS_ASSERT_UNCHECKED("assertion failed. Invalid record found.\r\n");
                         }
                     }
                 }

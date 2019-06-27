@@ -33,15 +33,14 @@
 
 /* Storage includes */
 #include "storage/storage_api.h"
-#include "storage/stdio/file_storage.h"
 
 /* Filesystem includes */
 #include "frogfs.h"
 #include "frogfs_assert.h"
 
-const char* TEST_CONTENT = "Hello, World! This is a record stored in the FrogFS.";
+const char* TEST_CONTENT = "Hello! This is FrogFS.";
 
-uint8_t read_buffer[4096*2];
+uint8_t read_buffer[128U];
 
 /* Some internal variables are exported here to perform some grey-box testing
  * and analyze internal structure state occasionally as a test expectation. */
@@ -504,15 +503,19 @@ int frogfs_execute_test(void)
 {
     t_e_frogfs_error fserr;
 
-    /* Initialize the stdio-file storage backend for FrogFS */
-    file_storage_set_size(4U * 1024U);      /* 4KB */
-
+    FROGFS_DEBUG_VERBOSE("test_contiguous");
     test_contiguous();
+    FROGFS_DEBUG_VERBOSE("test_reopen");
     test_reopen();
+    FROGFS_DEBUG_VERBOSE("test_contiguous_and_remove");
     test_contiguous_and_remove();
+    FROGFS_DEBUG_VERBOSE("test_contiguous_and_remove_at_end");
     test_contiguous_and_remove_at_end();
+    FROGFS_DEBUG_VERBOSE("test_record_limit");
     test_record_limit();
+    FROGFS_DEBUG_VERBOSE("test_fragmentation");
     test_fragmentation();
+    FROGFS_DEBUG_VERBOSE("test_0_byte_record");
     test_0_byte_record();
 
     fserr = storage_close();
@@ -524,9 +527,13 @@ int frogfs_execute_test(void)
 }
 
 #ifdef __linux__
+#include "storage/stdio/file_storage.h"
 /* Execute tests on a hosted linux platform */
 int main(void)
 {
+    /* Initialize the stdio-file storage backend for FrogFS */
+    file_storage_set_size(4U * 1024U);      /* 4KB */
+
     return frogfs_execute_test();
 }
 #endif
