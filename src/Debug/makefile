@@ -10,6 +10,7 @@ RM := rm -rf
 -include sources.mk
 -include test/subdir.mk
 -include storage/stdio/subdir.mk
+-include storage/avr/subdir.mk
 -include subdir.mk
 -include objects.mk
 

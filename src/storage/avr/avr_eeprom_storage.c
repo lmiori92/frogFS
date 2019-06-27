@@ -25,6 +25,8 @@
 
 #include "../storage_api.h"
 
+#ifdef __AVR__
+
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -137,3 +139,5 @@ t_e_frogfs_error storage_close(void)
     /* Nothing to do */
     return FROGFS_ERR_OK;
 }
+
+#endif
