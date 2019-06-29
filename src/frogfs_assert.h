@@ -18,6 +18,7 @@
 #define FROGFS_PRINTF               printf      /**< Normal hosted printfs */
 #endif
 
+#ifdef FROGFS_DEBUG
 #define FROGFS_DEBUG_VERBOSE(fmt, ...)      do {  FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("line\t%d:\t"), __LINE__); \
                                              FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM(fmt), ## __VA_ARGS__);           \
                                              FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
@@ -50,5 +51,11 @@
                                                   FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
                                                   exit(1);                       \
                                              }while(0);
+#else
+#define FROGFS_DEBUG_VERBOSE(fmt, ...)
+#define FROGFS_ASSERT(x,y,...)
+#define FROGFS_ASSERT_VERBOSE(x,y,fmt,...)
+#define FROGFS_ASSERT_UNCHECKED(fmt,...)
+#endif
 
 #endif /* FROGFS_ASSERT_H_ */
