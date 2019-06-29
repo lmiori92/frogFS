@@ -61,9 +61,15 @@
                                     								
                                 </option>
                                 								
-                                <option id="gnu.c.compiler.option.dialect.std.122313984" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
+                                <option id="gnu.c.compiler.option.dialect.std.122313984" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.default" valueType="enumerated"/>
                                 								
-                                <option id="gnu.c.compiler.option.warnings.extrawarn.1619024848" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
+                                <option id="gnu.c.compiler.option.warnings.extrawarn.1619024848" name="Extra warnings (-Wextra)" superClass="gnu.c.compiler.option.warnings.extrawarn" value="true" valueType="boolean"/>
+                                								
+                                <option id="gnu.c.compiler.option.preprocessor.def.symbols.1336965570" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
+                                    									
+                                    <listOptionValue builtIn="false" value="FROGFS_DEBUG"/>
+                                    								
+                                </option>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1416594235" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
                                 							

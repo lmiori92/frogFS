@@ -514,6 +514,9 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
     bool exit_loop = false;
     uint16_t written_bytes = 0;
     bool update_block_record = false;
+    uint16_t space_start;
+    uint16_t data_start;
+    uint16_t data_size;
 
     FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, record, size);
 
@@ -565,6 +568,7 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
                             io_error = true;
                             /* update the block record which shall cover what has been written so far without error */
                             exit_loop = true;
+#warning "We shall update the metadata only when really required to avoid early storage wear."
                             update_block_record = true;
                         }
                         else
@@ -590,11 +594,6 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
                 else if (frogfs_RAM[record].work_reg_2 >= frogfs_RAM[record].work_reg_1)
                 {
                     /* The contiguous space has been filled completely: search new contiguous space */
-#warning "TODO: optimize and check return values"
-                    uint16_t space_start;
-                    uint16_t data_start;
-                    uint16_t data_size;
-
                     retval = frogfs_find_contiguous_space(&space_start, &data_start, &data_size);
 
                     if (retval == FROGFS_ERR_OK)
@@ -627,7 +626,6 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
                 }
 
                 /* Check if the block has to be updated now */
-#warning "TODO: se offset != write_offset -3u allora stiamo scrivendo su un blocco fragmentato"
                 if (update_block_record == true)
                 {
                     /* Check if it is the first record block */
