@@ -53,9 +53,9 @@
                                              }while(0);
 #else
 #define FROGFS_DEBUG_VERBOSE(fmt, ...)
-#define FROGFS_ASSERT(x,y,...)
-#define FROGFS_ASSERT_VERBOSE(x,y,fmt,...)
-#define FROGFS_ASSERT_UNCHECKED(fmt,...)
+#define FROGFS_ASSERT(x,y,...)              exit(0);
+#define FROGFS_ASSERT_VERBOSE(x,y,fmt,...)  exit(0);
+#define FROGFS_ASSERT_UNCHECKED(fmt,...)    exit(0);
 #endif
 
 #endif /* FROGFS_ASSERT_H_ */
