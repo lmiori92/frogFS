@@ -60,6 +60,7 @@ int test_contiguous(void)
     t_e_frogfs_error fserr;
     uint16_t i = 0;
     uint16_t effective_read = 0;
+    uint8_t next_record = 0;
 
     printf("Formatting media\r\n");
     fserr = frogfs_format();
@@ -71,6 +72,10 @@ int test_contiguous(void)
 
     for (i = 0; i < FROGFS_MAX_RECORD_COUNT; i++)
     {
+        /* Verify the behavior of frogfs_get_available */
+        fserr = frogfs_get_available(&next_record);
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+        FROGFS_ASSERT(next_record, i);
 
         /* Filesystem is ready: open record */
         fserr = frogfs_open(i);
@@ -120,6 +125,11 @@ int test_contiguous(void)
     {
         FROGFS_ASSERT(i, file_listing[i]);
     }
+
+    /* Verify the behavior of frogfs_get_available: no more records are available here */
+    fserr = frogfs_get_available(&next_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OUT_OF_RANGE);
+    FROGFS_ASSERT(next_record, UINT8_MAX);
 
     return 0;
 }

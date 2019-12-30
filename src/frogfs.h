@@ -55,6 +55,7 @@ bool             frogfs_is_nil(const uint8_t *data, uint16_t size);
 t_e_frogfs_error frogfs_init(void);
 t_e_frogfs_error frogfs_find_contiguous_space(uint16_t *space_start, uint16_t *data_start, uint16_t *data_size);
 t_e_frogfs_error frogfs_list(uint8_t *list, uint8_t list_size, uint8_t *file_num);
+t_e_frogfs_error frogfs_get_available(uint8_t *record);
 t_e_frogfs_error frogfs_open(uint8_t record);
 t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size);
 t_e_frogfs_error frogfs_close(uint8_t record);

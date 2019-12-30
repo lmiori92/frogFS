@@ -488,6 +488,34 @@ t_e_frogfs_error frogfs_list(uint8_t *list, uint8_t list_size, uint8_t *file_num
     return retval;
 }
 
+t_e_frogfs_error frogfs_get_available(uint8_t *record)
+{
+    uint8_t i = 0;
+    t_e_frogfs_error retval = FROGFS_ERR_IO;
+
+    if (record == NULL)
+    {
+        retval = FROGFS_ERR_NULL_POINTER;
+    }
+    else
+    {
+        retval = FROGFS_ERR_OUT_OF_RANGE;
+        *record = UINT8_MAX;
+
+        for (i = 0; i < FROGFS_MAX_RECORD_COUNT; i++)
+        {
+            if (frogfs_RAM[i].offset == 0)
+            {
+                retval = FROGFS_ERR_OK;
+                *record = i;
+                break;
+            }
+        }
+    }
+
+    return retval;
+}
+
 t_e_frogfs_error frogfs_open(uint8_t record)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;
