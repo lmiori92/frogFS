@@ -456,6 +456,38 @@ t_e_frogfs_error frogfs_find_contiguous_space(uint16_t *space_start, uint16_t *d
     return retval;
 }
 
+t_e_frogfs_error frogfs_list(uint8_t *list, uint8_t list_size, uint8_t *file_num)
+{
+    uint8_t i = 0;
+    uint8_t list_i = 0;
+    t_e_frogfs_error retval = FROGFS_ERR_OK;
+
+    if ((list == NULL) || (file_num == NULL))
+    {
+        retval = FROGFS_ERR_NULL_POINTER;
+    }
+    else
+    {
+        *file_num = 0;
+
+        for (i = 0; i < FROGFS_MAX_RECORD_COUNT; i++)
+        {
+            if (frogfs_RAM[i].offset != 0)
+            {
+                if (list_i < list_size)
+                {
+                    list[list_i] = i;
+                    (*file_num)++;
+                }
+                list_i++;
+            }
+        }
+    }
+
+
+    return retval;
+}
+
 t_e_frogfs_error frogfs_open(uint8_t record)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;

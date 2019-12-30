@@ -110,6 +110,17 @@ int test_contiguous(void)
         FROGFS_ASSERT_VERBOSE(effective_read, strlen(TEST_CONTENT), "length does not match.");
     }
 
+    /* Check that listing the created records works as expected */
+    uint8_t file_listing[FROGFS_MAX_RECORD_COUNT];
+    uint8_t file_count = 0xFFU;  /* test that the variable is internally reset */
+    fserr = frogfs_list(file_listing, sizeof(file_listing), &file_count);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    FROGFS_ASSERT(file_count, FROGFS_MAX_RECORD_COUNT);
+    for (i = 0; i < FROGFS_MAX_RECORD_COUNT; i++)
+    {
+        FROGFS_ASSERT(i, file_listing[i]);
+    }
+
     return 0;
 }
 
