@@ -246,7 +246,7 @@ t_e_frogfs_error frogfs_init(void)
             retval = FROGFS_ERR_OK;
 
             /* Read the file offset table */
-            bool nil;
+            bool nil = false;
             do
             {
                 retval = storage_read(tmp, 3);
@@ -266,24 +266,19 @@ t_e_frogfs_error frogfs_init(void)
                             break;
                         }
 
+                        /* Extract the pointer value */
+                        pointer = (uint16_t)((uint16_t)(tmp[1] & ~0x80U) << 8U);
+                        pointer |= (uint16_t)(tmp[2]);
+
                         /* determine record type */
                         if ((FROGFS_RECORD_TYPE(tmp[0]) == FROGFS_RECORD_TYPE_NORMAL) &&
                             (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE) )
                         {
                             /* it is a Normal - Size record: indicates the start of a record */
 
-                            pointer = (uint16_t)((uint16_t)(tmp[1] & ~0x80U) << 8U);
-                            pointer |= (uint16_t)(tmp[2]);
-
                             if (index > FROGFS_MAX_RECORD_COUNT)
                             {
                                 FROGFS_DEBUG_VERBOSE("assertion failed. Record index out of range. %d", index);
-                                retval = FROGFS_ERR_OUT_OF_RANGE;
-                                break;
-                            }
-                            if ((pointer >= storage_size()) || (pointer <= 5U))
-                            {
-                                FROGFS_DEBUG_VERBOSE("assertion failed. Pointer out of range. %d", pointer);
                                 retval = FROGFS_ERR_OUT_OF_RANGE;
                                 break;
                             }
@@ -320,9 +315,13 @@ t_e_frogfs_error frogfs_init(void)
                         {
                             /* It is a fragment-size */
 
-                            /* skip the record data */
-                            pointer = (uint16_t)(tmp[1] << 8);
-                            pointer |= (uint16_t)(tmp[2]);
+                            if ((pointer >= storage_size()) || (pointer <= 5U))
+                            {
+                                FROGFS_DEBUG_VERBOSE("assertion failed. Pointer out of range. %d", pointer);
+                                retval = FROGFS_ERR_OUT_OF_RANGE;
+                                break;
+                            }
+
                             retval = storage_advance(pointer);
                         }
                         else
@@ -450,6 +449,66 @@ t_e_frogfs_error frogfs_find_contiguous_space(uint16_t *space_start, uint16_t *d
          FROGFS_DEBUG_VERBOSE("storage is full or too fragmented");
          retval = FROGFS_ERR_NOSPACE;
      }
+
+    return retval;
+}
+
+t_e_frogfs_error frogfs_list(uint8_t *list, uint8_t list_size, uint8_t *file_num)
+{
+    uint8_t i = 0;
+    uint8_t list_i = 0;
+    t_e_frogfs_error retval = FROGFS_ERR_OK;
+
+    if ((list == NULL) || (file_num == NULL))
+    {
+        retval = FROGFS_ERR_NULL_POINTER;
+    }
+    else
+    {
+        *file_num = 0;
+
+        for (i = 0; i < FROGFS_MAX_RECORD_COUNT; i++)
+        {
+            if (frogfs_RAM[i].offset != 0)
+            {
+                if (list_i < list_size)
+                {
+                    list[list_i] = i;
+                    (*file_num)++;
+                }
+                list_i++;
+            }
+        }
+    }
+
+
+    return retval;
+}
+
+t_e_frogfs_error frogfs_get_available(uint8_t *record)
+{
+    uint8_t i = 0;
+    t_e_frogfs_error retval = FROGFS_ERR_IO;
+
+    if (record == NULL)
+    {
+        retval = FROGFS_ERR_NULL_POINTER;
+    }
+    else
+    {
+        retval = FROGFS_ERR_OUT_OF_RANGE;
+        *record = UINT8_MAX;
+
+        for (i = 0; i < FROGFS_MAX_RECORD_COUNT; i++)
+        {
+            if (frogfs_RAM[i].offset == 0)
+            {
+                retval = FROGFS_ERR_OK;
+                *record = i;
+                break;
+            }
+        }
+    }
 
     return retval;
 }
@@ -693,6 +752,11 @@ t_e_frogfs_error frogfs_close(uint8_t record)
             frogfs_RAM[record].write_offset = 0;
             frogfs_RAM[record].work_reg_1   = 0;
             frogfs_RAM[record].work_reg_2   = 0;
+            retval = FROGFS_ERR_OK;
+        }
+        else if (frogfs_RAM[record].offset > 0U)
+        {
+            /* The file has only been opened but no operation has been performed. Just do nothing close. */
             retval = FROGFS_ERR_OK;
         }
         else

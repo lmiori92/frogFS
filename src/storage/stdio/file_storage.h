@@ -31,6 +31,17 @@
 
 #include <stdint.h>
 
+/**
+ * Set and use the given file as storage emulation.
+ * @param storage_filename
+ */
+void file_storage_set_file(char *storage_filename);
+
+/**
+ * Initialize the storage by giving a file size.
+ * The file "eeprom.bin" is generated.
+ * @param storage_size  the size of the emulated storage
+ */
 void file_storage_set_size(uint16_t storage_size);
 
 #endif /* STORAGE_FILE_H_ */
