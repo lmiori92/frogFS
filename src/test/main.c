@@ -551,7 +551,7 @@ int test_unclosed_file(void)
  *
  * @return  0 (or asserts)
  */
-int test_use_case_settings(bool perform_format_and_init)
+int test_use_case_settings(bool perform_format_and_init, bool check_first_open_zero_data)
 {
 #define FILE_SETTINGS       (0U)
     t_e_frogfs_error fserr;
@@ -589,15 +589,18 @@ int test_use_case_settings(bool perform_format_and_init)
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
     }
 
-    /* Try to reload settings */
-    fserr =  frogfs_read(FILE_SETTINGS, (uint8_t *)&demo_struct_read, sizeof(demo_struct_read), &effective_read);
-    FROGFS_ASSERT((demo_struct_read.demoVal0 == 0 &&
-                   demo_struct_read.demoVal1 == 0 &&
-                   demo_struct_read.demoVal2 == 0) ? 1 : 0, 1);
-    FROGFS_ASSERT(effective_read, 0);
-    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
-    fserr = frogfs_close(FILE_SETTINGS);
-    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    if (check_first_open_zero_data == true)
+    {
+        /* Try to reload settings */
+        fserr =  frogfs_read(FILE_SETTINGS, (uint8_t *)&demo_struct_read, sizeof(demo_struct_read), &effective_read);
+        FROGFS_ASSERT((demo_struct_read.demoVal0 == 0 &&
+                       demo_struct_read.demoVal1 == 0 &&
+                       demo_struct_read.demoVal2 == 0) ? 1 : 0, 1);
+        FROGFS_ASSERT(effective_read, 0);
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+        fserr = frogfs_close(FILE_SETTINGS);
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    }
 
     /* Save new settings */
     fserr = frogfs_erase(FILE_SETTINGS);
@@ -648,9 +651,9 @@ int test_file0_and_file1(void)
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
     /* Read - Erase - Write Record: 1st time */
-    test_use_case_settings(false);
+    test_use_case_settings(false, false);
     /* Read - Erase - Write Record: 2nd time */
-    test_use_case_settings(false);
+    test_use_case_settings(false, false);
     /* Simulate logging record: subsequent writes */
 
     /* Test and get the record name that is first available */
@@ -667,6 +670,37 @@ int test_file0_and_file1(void)
     }
     fserr = frogfs_close(new_record);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    uint8_t read_buffer[128];
+    uint16_t effective_read;
+
+    /* Read back the data: in one go */
+    fserr = frogfs_open(new_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    fserr = frogfs_read(new_record, read_buffer, sizeof(read_buffer), &effective_read);
+    FROGFS_ASSERT(effective_read, 128);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    for (i = 0; i < 128; i++)
+    {
+        FROGFS_ASSERT(read_buffer[i], i);
+    }
+    fserr = frogfs_close(new_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    /* Read back the data: byte by byte */
+    fserr = frogfs_open(new_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    for (i = 0; i < 128; i++)
+    {
+        fserr = frogfs_read(new_record, read_buffer, 1, &effective_read);
+        FROGFS_ASSERT(effective_read, 1);
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+        FROGFS_ASSERT(read_buffer[i], i);
+    }
+    fserr = frogfs_close(new_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    /* Perform power cycle and repeat data read */
 
     return 0;
 }
@@ -698,7 +732,7 @@ int frogfs_execute_test(void)
     FROGFS_DEBUG_VERBOSE("test_0_byte_record");
     test_0_byte_record();
     FROGFS_DEBUG_VERBOSE("test_use_case_settings");
-    test_use_case_settings(true);
+    test_use_case_settings(true, true);
     FROGFS_DEBUG_VERBOSE("test_unclosed_file");
     test_unclosed_file();
     FROGFS_DEBUG_VERBOSE("test_file0_and_file1");
@@ -718,7 +752,7 @@ int frogfs_execute_test(void)
 int main(void)
 {
     /* Initialize the stdio-file storage backend for FrogFS */
-    file_storage_set_size(4U * 1024U);      /* 4KB */
+    file_storage_set_size(1U * 1024U);      /* 1KB */
 
     return frogfs_execute_test();
 }
