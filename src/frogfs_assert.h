@@ -25,21 +25,21 @@
                                         } while(0);
 
 #define FROGFS_ASSERT(x,y,...)             do { uint32_t line = __LINE__;           \
-                                                  if (x != y)                        \
+                                                  if ((x) != (y))                        \
                                                   {                                  \
-                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("assertion failed at line %lu: "), (unsigned long)line); \
-                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("was %08lx, expected %08lx"), (unsigned long)x, (unsigned long)y);  \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("assertion failed at line %lu: "), (unsigned long)(line)); \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("was %08lx, expected %08lx"), (unsigned long)(x), (unsigned long)(y));  \
                                                       FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
                                                       exit(1);                       \
                                                   }                                  \
                                              }while(0);
 
 #define FROGFS_ASSERT_VERBOSE(x,y,fmt,...)      do { uint32_t line = __LINE__;          \
-                                                  if (x != y)                        \
+                                                  if ((x) != (y))                        \
                                                   {                                  \
-                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("assertion failed at line %lu: "), (unsigned long)line); \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("assertion failed at line %lu: "), (unsigned long)(line)); \
                                                       FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM(fmt), ## __VA_ARGS__);           \
-                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("was %08lx, expected %08lx"), (unsigned long)x, (unsigned long)y);  \
+                                                      FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("was %08lx, expected %08lx"), (unsigned long)(x), (unsigned long)(y));  \
                                                       FROGFS_PRINTF(FROGFS_DEBUG_STR_MEM("\r\n"));                  \
                                                       exit(1);                       \
                                                   }                                  \

@@ -246,7 +246,7 @@ t_e_frogfs_error frogfs_init(void)
             retval = FROGFS_ERR_OK;
 
             /* Read the file offset table */
-            bool nil;
+            bool nil = false;
             do
             {
                 retval = storage_read(tmp, 3);
@@ -278,12 +278,6 @@ t_e_frogfs_error frogfs_init(void)
                             if (index > FROGFS_MAX_RECORD_COUNT)
                             {
                                 FROGFS_DEBUG_VERBOSE("assertion failed. Record index out of range. %d", index);
-                                retval = FROGFS_ERR_OUT_OF_RANGE;
-                                break;
-                            }
-                            if ((pointer >= storage_size()) || (pointer <= 5U))
-                            {
-                                FROGFS_DEBUG_VERBOSE("assertion failed. Pointer out of range. %d", pointer);
                                 retval = FROGFS_ERR_OUT_OF_RANGE;
                                 break;
                             }
@@ -323,6 +317,14 @@ t_e_frogfs_error frogfs_init(void)
                             /* skip the record data */
                             pointer = (uint16_t)(tmp[1] << 8);
                             pointer |= (uint16_t)(tmp[2]);
+
+                            if ((pointer >= storage_size()) || (pointer <= 5U))
+                            {
+                                FROGFS_DEBUG_VERBOSE("assertion failed. Pointer out of range. %d", pointer);
+                                retval = FROGFS_ERR_OUT_OF_RANGE;
+                                break;
+                            }
+
                             retval = storage_advance(pointer);
                         }
                         else
