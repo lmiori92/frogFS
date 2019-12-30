@@ -63,6 +63,30 @@ static void file_storage_create(void)
     }
 }
 
+void file_storage_set_file(char *storage_filename)
+{
+    int fretval = -1;
+
+    file_storage_size = 0;
+
+    eeprom_handle = fopen(storage_filename, "r+");
+    if (eeprom_handle == NULL)
+    {
+        printf("Could not open eeprom file: %s\n", storage_filename);
+    }
+    else
+    {
+        /* Read the emulated size from the file itself */
+        (void)fseek(eeprom_handle, 0, SEEK_END);
+        fretval = ftell(eeprom_handle);
+
+        if (fretval != -1)
+        {
+            file_storage_size = (uint16_t)fretval;
+        }
+    }
+}
+
 void file_storage_set_size(uint16_t storage_size)
 {
     /* Set the new internal storage size */

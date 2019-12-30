@@ -266,14 +266,15 @@ t_e_frogfs_error frogfs_init(void)
                             break;
                         }
 
+                        /* Extract the pointer value */
+                        pointer = (uint16_t)((uint16_t)(tmp[1] & ~0x80U) << 8U);
+                        pointer |= (uint16_t)(tmp[2]);
+
                         /* determine record type */
                         if ((FROGFS_RECORD_TYPE(tmp[0]) == FROGFS_RECORD_TYPE_NORMAL) &&
                             (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE) )
                         {
                             /* it is a Normal - Size record: indicates the start of a record */
-
-                            pointer = (uint16_t)((uint16_t)(tmp[1] & ~0x80U) << 8U);
-                            pointer |= (uint16_t)(tmp[2]);
 
                             if (index > FROGFS_MAX_RECORD_COUNT)
                             {
@@ -313,10 +314,6 @@ t_e_frogfs_error frogfs_init(void)
                                  (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE) )
                         {
                             /* It is a fragment-size */
-
-                            /* skip the record data */
-                            pointer = (uint16_t)(tmp[1] << 8);
-                            pointer |= (uint16_t)(tmp[2]);
 
                             if ((pointer >= storage_size()) || (pointer <= 5U))
                             {
@@ -755,6 +752,11 @@ t_e_frogfs_error frogfs_close(uint8_t record)
             frogfs_RAM[record].write_offset = 0;
             frogfs_RAM[record].work_reg_1   = 0;
             frogfs_RAM[record].work_reg_2   = 0;
+            retval = FROGFS_ERR_OK;
+        }
+        else if (frogfs_RAM[record].offset > 0U)
+        {
+            /* The file has only been opened but no operation has been performed. Just do nothing close. */
             retval = FROGFS_ERR_OK;
         }
         else

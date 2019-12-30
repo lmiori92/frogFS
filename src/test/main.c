@@ -551,7 +551,7 @@ int test_unclosed_file(void)
  *
  * @return  0 (or asserts)
  */
-int test_use_case_settings(void)
+int test_use_case_settings(bool perform_format_and_init)
 {
 #define FILE_SETTINGS       (0U)
     t_e_frogfs_error fserr;
@@ -564,13 +564,16 @@ int test_use_case_settings(void)
     t_s_demo demo_struct_write = { 0xAA, 0x1234, 0xABCD };
     t_s_demo demo_struct_read = { 0, 0, 0 };
 
-    printf("Formatting media\r\n");
-    fserr = frogfs_format();
-    printf_frogfserror(fserr);
-    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
-    fserr = frogfs_init();
-    printf_frogfserror(fserr);
-    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    if (perform_format_and_init == true)
+    {
+        printf("Formatting media\r\n");
+        fserr = frogfs_format();
+        printf_frogfserror(fserr);
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+        fserr = frogfs_init();
+        printf_frogfserror(fserr);
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    }
 
     /* Filesystem is ready: open record */
     fserr = frogfs_open(FILE_SETTINGS);
@@ -579,9 +582,12 @@ int test_use_case_settings(void)
     fserr = frogfs_close(FILE_SETTINGS);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
-    /* Simulate power-cycle by re-init of frogfs */
-    fserr = frogfs_init();
-    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    if (perform_format_and_init == true)
+    {
+        /* Simulate power-cycle by re-init of frogfs */
+        fserr = frogfs_init();
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    }
 
     /* Try to reload settings */
     fserr =  frogfs_read(FILE_SETTINGS, (uint8_t *)&demo_struct_read, sizeof(demo_struct_read), &effective_read);
@@ -603,9 +609,12 @@ int test_use_case_settings(void)
     fserr = frogfs_close(FILE_SETTINGS);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
-    /* Simulate power-cycle by re-init of frogfs */
-    fserr = frogfs_init();
-    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    if (perform_format_and_init == true)
+    {
+        /* Simulate power-cycle by re-init of frogfs */
+        fserr = frogfs_init();
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    }
 
     /* Try to reload settings */
     fserr =  frogfs_read(FILE_SETTINGS, (uint8_t *)&demo_struct_read, sizeof(demo_struct_read), &effective_read);
@@ -615,6 +624,48 @@ int test_use_case_settings(void)
     FROGFS_ASSERT(effective_read, sizeof(demo_struct_write));
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
     fserr = frogfs_close(FILE_SETTINGS);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    return 0;
+}
+
+/**
+ * This test is checking the behavior in a common situation that is observed
+ * in the first application developed that makes use of the frogfs as storage backend.
+ * @return 0 (or assertion (abort))
+ */
+int test_file0_and_file1(void)
+{
+    uint8_t i = 0;
+    t_e_frogfs_error fserr;
+
+    printf("Formatting media\r\n");
+    fserr = frogfs_format();
+    printf_frogfserror(fserr);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    fserr = frogfs_init();
+    printf_frogfserror(fserr);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    /* Read - Erase - Write Record: 1st time */
+    test_use_case_settings(false);
+    /* Read - Erase - Write Record: 2nd time */
+    test_use_case_settings(false);
+    /* Simulate logging record: subsequent writes */
+
+    /* Test and get the record name that is first available */
+    uint8_t new_record;
+    fserr = frogfs_get_available(&new_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    fserr = frogfs_open(new_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    /* Write 128 bytes - byte by byte */
+    for (i = 0; i < 128; i++)
+    {
+        fserr = frogfs_write(new_record, &i, 1U);
+        FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+    }
+    fserr = frogfs_close(new_record);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
     return 0;
@@ -647,9 +698,11 @@ int frogfs_execute_test(void)
     FROGFS_DEBUG_VERBOSE("test_0_byte_record");
     test_0_byte_record();
     FROGFS_DEBUG_VERBOSE("test_use_case_settings");
-    test_use_case_settings();
+    test_use_case_settings(true);
     FROGFS_DEBUG_VERBOSE("test_unclosed_file");
     test_unclosed_file();
+    FROGFS_DEBUG_VERBOSE("test_file0_and_file1");
+    test_file0_and_file1();
 
     fserr = storage_close();
     FROGFS_ASSERT_VERBOSE(fserr, FROGFS_ERR_OK, "assertion failed at closing the storage layer.");
