@@ -30,9 +30,17 @@
 
 #include <stdbool.h>
 
+/** The simplistic design needs to avoid zero's in the metadata block,
+ *  especially at the beginning as the free space allocator cannot
+ *  distinguish a metadata versus empty space otherwise.
+ */
+#define FROGFS_MIN_RECORD_INDEX_OFFSET (1U)
+
 /** Maximum number of total records on the filesystem.
- *  Tune: adjust to match the RAM requirements for the application */
+ *  Tune: adjust to match the RAM requirements for the application but do NOT
+ *        exceed 126. The record index is internally offset by FROGFS_MIN_RECORD_INDEX_OFFSET. */
 #define FROGFS_MAX_RECORD_COUNT        (32U)
+
 /** Maximum length of a single record. This is a hard limit that comes
  *  from the design of the filesystem. Anything below could work but has
  *  not meaning as records are dynamically allocated. */

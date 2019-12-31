@@ -46,6 +46,8 @@ uint8_t read_buffer[128U];
  * and analyze internal structure state occasionally as a test expectation. */
 extern t_s_frogfsram_record frogfs_RAM[FROGFS_MAX_RECORD_COUNT];
 
+#warning "As debugging required some time, also prepare a test to check if zero-bytes chuncks can be flawlessly written"
+#warning "...and not regarded as free storage"
 /**
  * This test is used to verify that allocation of the maximum number of records
  * is successfully performed in a contiguous space (without fragmentation).
@@ -620,6 +622,8 @@ int test_use_case_settings(bool perform_format_and_init, bool check_first_open_z
     }
 
     /* Try to reload settings */
+    fserr = frogfs_open(FILE_SETTINGS);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
     fserr =  frogfs_read(FILE_SETTINGS, (uint8_t *)&demo_struct_read, sizeof(demo_struct_read), &effective_read);
     FROGFS_ASSERT((demo_struct_read.demoVal0 == demo_struct_write.demoVal0 &&
                    demo_struct_read.demoVal1 == demo_struct_write.demoVal1 &&
@@ -669,6 +673,11 @@ int test_file0_and_file1(void)
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
     }
     fserr = frogfs_close(new_record);
+    FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
+
+    /* Simulate a power cycle */
+    fserr = frogfs_init();
+    printf_frogfserror(fserr);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
 
     uint8_t read_buffer[128];

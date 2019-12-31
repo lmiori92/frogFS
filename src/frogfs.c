@@ -34,7 +34,7 @@
  * 1)  Fast write is important, read can be a little slower.
  * 2)  Fragmentation shall be supported, to support deletion.
  * 3)  Filenames are not needed. Numeric index is fine.
- * 4)  An amount of 127 records (files) is more than enough.
+ * 4)  An amount of 126 records (files) is more than enough.
  * 5)  A certain boot-time to sync filesystem to RAM is accepted.
  * 6)  Wear-leveling is not managed by the filesystem. It can be
  *     implemented in a lower or upper layer.
@@ -126,9 +126,14 @@
 #define FROGFS_SIGNATURE               (0x66594C53UL)
 #define FROGFS_VERSION                 (1)
 
-#define FROGFS_RECORD_INDEX(x)         ((x) & ~0x80U)
+/** Every index that is in RAM shall be increased for writing to disk first */
+#define FROGFS_RECORD_INDEX_OFFSET(x)   ((x) + FROGFS_MIN_RECORD_INDEX_OFFSET)
+
+/** Every index written to disk needs to be subtracted */
+#define FROGFS_RECORD_INDEX(x)         (((x) & ~0x80U) - FROGFS_MIN_RECORD_INDEX_OFFSET)
 #define FROGFS_RECORD_TYPE(x)          ((x >> 7U) & 0x1)
 #define FROGFS_RECORD_DATA(x)          ((x >> 7U) & 0x1)
+#define FROGFS_RECORD_POINTER(x,y,z)   ((uint16_t)((uint16_t)((uint16_t)(y & ~0x80U) << 8U) | (uint16_t)(z)))
 
 #define FROGFS_RECORD_TYPE_NORMAL      (0U)
 #define FROGFS_RECORD_TYPE_FRAGMENT    (1U)
@@ -267,8 +272,7 @@ t_e_frogfs_error frogfs_init(void)
                         }
 
                         /* Extract the pointer value */
-                        pointer = (uint16_t)((uint16_t)(tmp[1] & ~0x80U) << 8U);
-                        pointer |= (uint16_t)(tmp[2]);
+                        pointer = FROGFS_RECORD_POINTER(tmp[0], tmp[1], tmp[2]);
 
                         /* determine record type */
                         if ((FROGFS_RECORD_TYPE(tmp[0]) == FROGFS_RECORD_TYPE_NORMAL) &&
@@ -309,11 +313,6 @@ t_e_frogfs_error frogfs_init(void)
                             /* It is a fragment-pointer */
 
                             /* just skip the record metadata, next will be something else */
-                        }
-                        else if ((FROGFS_RECORD_TYPE(tmp[0]) == FROGFS_RECORD_TYPE_FRAGMENT) &&
-                                 (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE) )
-                        {
-                            /* It is a fragment-size */
 
                             if ((pointer >= storage_size()) || (pointer <= 5U))
                             {
@@ -322,6 +321,12 @@ t_e_frogfs_error frogfs_init(void)
                                 break;
                             }
 
+                            retval = storage_advance(pointer);
+                        }
+                        else if ((FROGFS_RECORD_TYPE(tmp[0]) == FROGFS_RECORD_TYPE_FRAGMENT) &&
+                                 (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE) )
+                        {
+                            /* It is a fragment-size */
                             retval = storage_advance(pointer);
                         }
                         else
@@ -367,10 +372,27 @@ t_e_frogfs_error frogfs_find_contiguous_space(uint16_t *space_start, uint16_t *d
     bool created_ok = false;
     bool io_error = false;
     uint16_t blank_cnt = 0;
+    uint16_t size_advance = 0;
 
     /* Goto after the header */
     storage_seek(5);
 
+// TODO implement algorithm that scans for record data blocks, determines the occupied space
+//      and then skips the necessary bytes and determines the good "hole to choose from.
+//    do
+//    {
+//        /* Read record metadata */
+//        retval = storage_read(&tmp, 3U);
+//
+//        if (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE)
+//        {
+//
+//        }
+//        size_advance = FROGFS_RECORD_POINTER(tmp[0], tmp[1], tmp[2]);
+//
+//    } while(0);
+
+#warning "Buggy design/implementation. The thing does not take into consideration the actual space used by chuncks!"
     /* Find the first NIL position */
      do
      {
@@ -539,7 +561,7 @@ t_e_frogfs_error frogfs_open(uint8_t record)
             if (retval == FROGFS_ERR_OK)
             {
                 /* Create the actual record: Normal - Size */
-                tmp[0] = record | (FROGFS_RECORD_TYPE_NORMAL << 7U);
+                tmp[0] = FROGFS_RECORD_INDEX_OFFSET(record) | (FROGFS_RECORD_TYPE_NORMAL << 7U);
                 tmp[1] = (FROGFS_RECORD_DATA_SIZE << 7U);
                 tmp[2] = 0;
 
@@ -580,7 +602,7 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
     FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, record, size);
 
     /* Check if the file exists or not */
-    if ((record < FROGFS_MAX_RECORD_COUNT) && (size < FROGFS_MAX_RECORD_SIZE))
+    if ((record < FROGFS_MAX_RECORD_COUNT) && (size <= FROGFS_MAX_RECORD_SIZE))
     {
         if (frogfs_RAM[record].write_offset == 0)
         {
@@ -659,7 +681,7 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
                     {
                         /* Space found for stuffing the fragmented block */
                         /* Create the actual record: Fragment - Pointer and store the start address of the fragment */
-                        tmp[0] = record | (FROGFS_RECORD_TYPE_FRAGMENT << 7U);
+                        tmp[0] = FROGFS_RECORD_INDEX_OFFSET(record) | (FROGFS_RECORD_TYPE_FRAGMENT << 7U);
                         tmp[1] = (FROGFS_RECORD_DATA_POINTER << 7U) | (uint8_t)(space_start >> 8U);
                         tmp[2] = (uint8_t)space_start;
 
@@ -709,7 +731,7 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
 
                         tmp_size = frogfs_RAM[record].work_reg_2;
 
-                        tmp[0] = (uint8_t)(FROGFS_RECORD_TYPE_FRAGMENT << 7U) | record;
+                        tmp[0] = (uint8_t)(FROGFS_RECORD_TYPE_FRAGMENT << 7U) | FROGFS_RECORD_INDEX_OFFSET(record);
                         tmp[1] = (uint8_t)((FROGFS_RECORD_DATA_SIZE << 7U)) | (uint8_t)(tmp_size >> 8U);
                         tmp[2] = (uint8_t)(tmp_size);
 
@@ -812,7 +834,7 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint8_t *data, uint16_t size, u
     FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, record, size);
 
     /* Check if the file exists or not */
-    if ((record < FROGFS_MAX_RECORD_COUNT) && (size < FROGFS_MAX_RECORD_SIZE))
+    if ((record < FROGFS_MAX_RECORD_COUNT) && (size <= FROGFS_MAX_RECORD_SIZE))
     {
         if (frogfs_RAM[record].write_offset != 0)
         {
@@ -861,8 +883,7 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint8_t *data, uint16_t size, u
                                 FROGFS_DEBUG_VERBOSE("Sized fragment. Continue reading from %d", frogfs_RAM[record].work_reg_1);
 
                                 retval = storage_pos(&frogfs_RAM[record].work_reg_1);                    /* save the data pointer */
-                                frogfs_RAM[record].work_reg_2 = tmp[2];                                  /* LSB */
-                                frogfs_RAM[record].work_reg_2 |= (uint16_t)((tmp[1] & ~0x80U << 8U));    /* MSB (remove the size type bit) */
+                                frogfs_RAM[record].work_reg_2 = FROGFS_RECORD_POINTER(tmp[0], tmp[1], tmp[2]);  /* Index - MSB (remove the size type bit) - LSB */
                                 FROGFS_DEBUG_VERBOSE("fragmented record size %d starting at %d", frogfs_RAM[record].work_reg_2, frogfs_RAM[record].work_reg_1);
                             }
                             else
@@ -978,9 +999,8 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint8_t *data, uint16_t size, u
 
                         if (retval == FROGFS_ERR_OK)
                         {
-                            retval = storage_pos(&frogfs_RAM[record].work_reg_1);                    /* save the data pointer */
-                            frogfs_RAM[record].work_reg_2 = (uint16_t)tmp[2];                                  /* LSB */
-                            frogfs_RAM[record].work_reg_2 |= (uint16_t)((tmp[1] & ~0x80U) << 8U);    /* MSB (remove the size type bit) */
+                            retval = storage_pos(&frogfs_RAM[record].work_reg_1);                            /* save the data pointer */
+                            frogfs_RAM[record].work_reg_2 = FROGFS_RECORD_POINTER(tmp[0], tmp[1], tmp[2]);   /* pick the block size from the metadata block */
                             FROGFS_DEBUG_VERBOSE("record size %d", frogfs_RAM[record].work_reg_2);
                         }
 
