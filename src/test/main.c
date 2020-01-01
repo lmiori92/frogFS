@@ -558,13 +558,11 @@ int test_use_case_settings(bool perform_format_and_init, bool check_first_open_z
 #define FILE_SETTINGS       (0U)
     t_e_frogfs_error fserr;
     uint16_t effective_read = 0;
-    typedef struct {
-        uint8_t  demoVal0;
-        uint32_t demoVal1;
-        uint32_t demoVal2;
-    } t_s_demo;
-    t_s_demo demo_struct_write = { 0xAA, 0x1234, 0xABCD };
-    t_s_demo demo_struct_read = { 0, 0, 0 };
+    uint8_t i = 0;
+    /* This data is simulating both the presence of null pointers (FrogFS ones!) and the
+     * presence of metadata-like data in the record data stream. */
+    uint8_t demo_struct_write[14] = {0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF};
+    uint8_t demo_struct_read[14] = {0x00};
 
     if (perform_format_and_init == true)
     {
@@ -594,10 +592,11 @@ int test_use_case_settings(bool perform_format_and_init, bool check_first_open_z
     if (check_first_open_zero_data == true)
     {
         /* Try to reload settings */
-        fserr =  frogfs_read(FILE_SETTINGS, (uint8_t *)&demo_struct_read, sizeof(demo_struct_read), &effective_read);
-        FROGFS_ASSERT((demo_struct_read.demoVal0 == 0 &&
-                       demo_struct_read.demoVal1 == 0 &&
-                       demo_struct_read.demoVal2 == 0) ? 1 : 0, 1);
+        fserr =  frogfs_read(FILE_SETTINGS, demo_struct_read, sizeof(demo_struct_read), &effective_read);
+        for (i = 0; i < sizeof(demo_struct_read); i++)
+        {
+            FROGFS_ASSERT(demo_struct_read[i], 0x00U);
+        }
         FROGFS_ASSERT(effective_read, 0);
         FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
         fserr = frogfs_close(FILE_SETTINGS);
@@ -609,7 +608,7 @@ int test_use_case_settings(bool perform_format_and_init, bool check_first_open_z
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
     fserr = frogfs_open(FILE_SETTINGS);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
-    fserr = frogfs_write(FILE_SETTINGS, (const uint8_t *)&demo_struct_write, sizeof(demo_struct_write));
+    fserr = frogfs_write(FILE_SETTINGS, demo_struct_write, sizeof(demo_struct_write));
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
     fserr = frogfs_close(FILE_SETTINGS);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
@@ -624,10 +623,11 @@ int test_use_case_settings(bool perform_format_and_init, bool check_first_open_z
     /* Try to reload settings */
     fserr = frogfs_open(FILE_SETTINGS);
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
-    fserr =  frogfs_read(FILE_SETTINGS, (uint8_t *)&demo_struct_read, sizeof(demo_struct_read), &effective_read);
-    FROGFS_ASSERT((demo_struct_read.demoVal0 == demo_struct_write.demoVal0 &&
-                   demo_struct_read.demoVal1 == demo_struct_write.demoVal1 &&
-                   demo_struct_read.demoVal2 == demo_struct_write.demoVal2) ? 1 : 0, 1);
+    fserr =  frogfs_read(FILE_SETTINGS, demo_struct_read, sizeof(demo_struct_read), &effective_read);
+    for (i = 0; i < sizeof(demo_struct_read); i++)
+    {
+        FROGFS_ASSERT(demo_struct_read[i], demo_struct_write[i]);
+    }
     FROGFS_ASSERT(effective_read, sizeof(demo_struct_write));
     FROGFS_ASSERT(fserr, FROGFS_ERR_OK);
     fserr = frogfs_close(FILE_SETTINGS);

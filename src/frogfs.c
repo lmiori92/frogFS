@@ -158,6 +158,7 @@ t_s_frogfsram_record frogfs_RAM[FROGFS_MAX_RECORD_COUNT];
 #warning "add in all methods a check that the requested offset is not outside physical size of the storage"
 #warning "Always allow multiple reads if no erase or write operation is ongoing. First version: one file at a time only ?"
 
+#warning "add a feature that if the disk has been formated, all operations are inhibit till storage_init is done again"
 t_e_frogfs_error frogfs_format(void)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;
@@ -903,6 +904,7 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint8_t *data, uint16_t size, u
                     }
                     else if (record != record_index)
                     {
+                        // TODO this message is also happening normally i.e. empty space after file. Please check that ...
                         FROGFS_DEBUG_VERBOSE("Record block found but of different record index %d. Skip.", record_index);
                         exit_loop = true;
                     }
