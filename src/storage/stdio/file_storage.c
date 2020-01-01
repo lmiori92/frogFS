@@ -126,6 +126,23 @@ t_e_frogfs_error storage_advance(uint16_t size)
     return retval;
 }
 
+t_e_frogfs_error storage_backtrack(uint16_t size)
+{
+    t_e_frogfs_error retval = FROGFS_ERR_IO;
+    int fretval;
+
+    NULL_PTR_CHECK_RETURN(eeprom_handle);
+
+    fretval = fseek(eeprom_handle, -1L * (long int)size, SEEK_CUR);
+
+    if (fretval == 0)
+    {
+        retval = FROGFS_ERR_OK;
+    }
+
+    return retval;
+}
+
 t_e_frogfs_error storage_pos(uint16_t *offset)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;
@@ -187,12 +204,22 @@ t_e_frogfs_error storage_read(uint8_t *data, uint16_t size)
     NULL_PTR_CHECK_RETURN(data);
     NULL_PTR_CHECK_RETURN(eeprom_handle);
 
-    fretval = fread(data, 1, size, eeprom_handle);
+    /* Verify if we are reading out of space */
+    fretval = ftell(eeprom_handle);
 
-
-    if (fretval == (int)size)
+    if (((fretval + (int)size) <= (int)(file_storage_size)))
     {
-        retval = FROGFS_ERR_OK;
+        fretval = fread(data, 1, size, eeprom_handle);
+
+        if (fretval == (int)size)
+        {
+            retval = FROGFS_ERR_OK;
+        }
+    }
+    else
+    {
+        /* Out of space */
+        retval = FROGFS_ERR_NOSPACE;
     }
 
     return retval;
@@ -206,12 +233,22 @@ t_e_frogfs_error storage_write(const uint8_t *data, uint16_t size)
     NULL_PTR_CHECK_RETURN(data);
     NULL_PTR_CHECK_RETURN(eeprom_handle);
 
-    fretval = fwrite(data, 1, size, eeprom_handle);
+    /* Verify if we are reading out of space */
+    fretval = ftell(eeprom_handle);
 
-
-    if (fretval == (int)size)
+    if (((fretval + (int)size) <= (int)(file_storage_size)))
     {
-        retval = FROGFS_ERR_OK;
+        fretval = fwrite(data, 1, size, eeprom_handle);
+
+        if (fretval == (int)size)
+        {
+            retval = FROGFS_ERR_OK;
+        }
+    }
+    else
+    {
+        /* Out of space */
+        retval = FROGFS_ERR_NOSPACE;
     }
 
     return retval;

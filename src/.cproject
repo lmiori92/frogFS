@@ -68,6 +68,8 @@
                                 <option id="gnu.c.compiler.option.preprocessor.def.symbols.1336965570" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
                                     									
                                     <listOptionValue builtIn="false" value="FROGFS_DEBUG"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="FROGFS_UNIT_TESTING"/>
                                     								
                                 </option>
                                 								

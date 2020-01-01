@@ -141,6 +141,18 @@
 #define FROGFS_RECORD_DATA_POINTER     (0U)
 #define FROGFS_RECORD_DATA_SIZE        (1U)
 
+/** The size in bytes that a record metadata information
+ * occupies on the actual disk.
+ */
+#define FROGFS_RECORD_METADATA_SIZE    (3U)
+
+/**
+ * Helper macro that sets the error flag if the storage
+ * return value is not OK (aka something happened in the storage layer)
+ */
+#define FROGFS_SET_IOERROR_FLAG(flag, retval)   ((flag) |= (((retval) != FROGFS_ERR_OK) ? true : false))
+#define FROGFS_SET_NOSPACE_FLAG(flag, retval)   ((flag) |= (((retval) != FROGFS_ERR_NOSPACE) ? true : false))
+
 t_s_frogfsram_record frogfs_RAM[FROGFS_MAX_RECORD_COUNT];
 
 #warning "add in all methods a check that the requested offset is not outside physical size of the storage"
@@ -199,29 +211,6 @@ t_e_frogfs_error frogfs_format(void)
     return retval;
 }
 
-bool frogfs_is_nil(const uint8_t *data, uint16_t size)
-{
-    if (size >= 3)
-    {
-        /* Not too small, check */
-        if (data[0] == 0 && data[1] == 0 && data[2] == 0)
-        {
-            /* definitely a nil */
-            return true;
-        }
-        else
-        {
-            /* not a nil, something else */
-            return false;
-        }
-    }
-    else
-    {
-        /* Too small. It is nil for the filesystem. */
-        return true;
-    }
-}
-
 t_e_frogfs_error frogfs_init(void)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;
@@ -254,12 +243,25 @@ t_e_frogfs_error frogfs_init(void)
             bool nil = false;
             do
             {
-                retval = storage_read(tmp, 3);
+                //null_counter = 0;
+
+                do
+                {
+                    retval = storage_read(tmp, 1);
+                    if (tmp[0] != 0x00U)
+                    {
+                        /* Advance by 2 (Metadata is 3 bytes) and quit */
+                        retval = storage_backtrack(1);
+                        if (retval == FROGFS_ERR_OK)
+                        {
+                            retval = storage_read(tmp, 3);
+                        }
+                        break;
+                    }
+                } while (retval == FROGFS_ERR_OK);
 
                 if (retval == FROGFS_ERR_OK)
                 {
-                    nil = frogfs_is_nil(tmp, sizeof(tmp));
-
                     if (nil == false)
                     {
                         index = FROGFS_RECORD_INDEX(tmp[0]);
@@ -368,109 +370,132 @@ t_e_frogfs_error frogfs_init(void)
 t_e_frogfs_error frogfs_find_contiguous_space(uint16_t *space_start, uint16_t *data_start, uint16_t *data_size)
 {
     t_e_frogfs_error retval = FROGFS_ERR_IO;
-    uint8_t tmp;
-    bool created_ok = false;
-    bool io_error = false;
-    uint16_t blank_cnt = 0;
-    uint16_t size_advance = 0;
+    uint8_t tmp[3];
+    bool start_zero_find = false;
+    uint16_t blank_cnt = 0U;
+    uint16_t size_advance = 0U;
 
     /* Goto after the header */
     storage_seek(5);
 
-// TODO implement algorithm that scans for record data blocks, determines the occupied space
-//      and then skips the necessary bytes and determines the good "hole to choose from.
-//    do
-//    {
-//        /* Read record metadata */
-//        retval = storage_read(&tmp, 3U);
-//
-//        if (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE)
-//        {
-//
-//        }
-//        size_advance = FROGFS_RECORD_POINTER(tmp[0], tmp[1], tmp[2]);
-//
-//    } while(0);
+    do
+    {
+        /* Reset flags here */
+        start_zero_find = false;
+        blank_cnt = 0;
 
-#warning "Buggy design/implementation. The thing does not take into consideration the actual space used by chuncks!"
-    /* Find the first NIL position */
-     do
-     {
-         retval = storage_read(&tmp, 1U);
+        /* Read record metadata */
+        retval = storage_read(tmp, 3U);
 
-         if (retval == FROGFS_ERR_OK)
-         {
-             if (tmp == 0)
-             {
-                 /* empty hole has been found */
-                 blank_cnt++;
-             }
-             else
-             {
-                 /* reset the blank counter */
-                 blank_cnt = 0;
-             }
+        if (retval == FROGFS_ERR_OK)
+        {  /* No error, could ready fully */
+            if ((tmp[0] == 0) || (tmp[1] == 0) || (tmp[2] == 0))
+            {
+                /* This is free space: it is not a metadata */
+                /* Count already 3 bytes free */
+                blank_cnt += FROGFS_RECORD_METADATA_SIZE;
+                /* Continue looking for more free space */
+                start_zero_find = true;
+                /* Save the space address (potential) and remove the metadata size from it */
+                retval = storage_pos(space_start);
+                *space_start -= FROGFS_RECORD_METADATA_SIZE;
+            }
+            else
+            {
+                if (FROGFS_RECORD_DATA(tmp[1]) == FROGFS_RECORD_DATA_SIZE)
+                {
+                    /* Retrieve the size and ask the storage layer to advance by that amount */
+                    size_advance = FROGFS_RECORD_POINTER(tmp[0], tmp[1], tmp[2]);
+                    retval = storage_advance(size_advance);
 
-             if ((blank_cnt >= 7U) && (created_ok == false))
-             {
-                 /* 3bytes for record + 1 byte min record data + 3 bytes for
-                  * fragmentation pointer */
-                 retval = storage_pos(space_start);
+                    if (retval == FROGFS_ERR_OK)
+                    {
+                        // TODO if the error is different here it means the filesystem suffers
+                        // of rotten data...
+                    }
 
-                 if (retval != FROGFS_ERR_OK)
-                 {
-                     /* Write error */
-                     io_error = true;
-                     break;
-                 }
+                }
+                else
+                {
+                    /* It is of pointer type, just restart iteration */
+                }
+            }
+        }
+        else
+        {  /* partly not read due to out of physical space or IO error */
+            /* Get out of the loop */
+            break;
+        }
 
-                 /* Seeked space is at least 7 bytes ahead. Rewind */
-                 *space_start      -= 7U;
-                 /* The data write offset shall not count the record */
-                 *data_start = *space_start + 3U;
+        if (start_zero_find == true)
+        {
+            for (;;)    /* The loop is eventually terminated */
+            {
+                /* Storage read bytes and increment the null counter */
+                retval = storage_read(tmp, 1U);
 
-                 FROGFS_DEBUG_VERBOSE("space found at 0x%04x", *space_start);
-                 FROGFS_DEBUG_VERBOSE("write offset set at 0x%04x", *data_start);
+                if (retval == FROGFS_ERR_OK)
+                {
+                    if (tmp[0] == 0)
+                    {
+                        /* empty hole has been found */
+                        blank_cnt++;
+                    }
+                    else
+                    {
+                        /* reset the blank counter */
+                        blank_cnt = 0;
+                        /* Go back by one position */
+                        retval = storage_backtrack(1);
+                        /* Exit the loop */
+                        break;
+                    }
+                }
+                else if (retval == FROGFS_ERR_NOSPACE)
+                {
+                    /* Out of space: exit the loop with the bytes that could be marked as free */
+                    break;
+                }
+                else
+                {
+                    /* IO error or other error: exit the loop */
+                    break;
+                }
+            }
 
-                 /* Record is created. */
-                 created_ok = true;
-             }
-             else if ( ((blank_cnt == 0) || (storage_end_of_storage() == FROGFS_ERR_OK)) &&
-                        (created_ok == true)
-                     )
-             {
-                 /* Done allocating new file */
-                 FROGFS_DEBUG_VERBOSE("allocation of file for writing %d contiguous bytes", *data_size);
-                 break;
-             }
-             else if ((blank_cnt >= 7) && (created_ok == true))
-             {
-                 /* Keep counting the hole for a faster writing */
-                 *data_size = blank_cnt - 6U;                  /* we want at least 1 byte data to be used plus 2x record size */
-             }
-         }
-         else
-         {
-             /* Write error */
-             io_error = true;
-             break;
-         }
-     } while (retval == FROGFS_ERR_OK);    // TILL EOF
+            if (blank_cnt >= 7U)
+            {
+                /* We have enough space:
+                 * 1 byte of actual data
+                 * 3 bytes the record metadata
+                 * 3 bytes for potential further fragmented data pointer
+                 */
+                /* The data write offset shall not count the record */
+                *data_start = *space_start + 3U;
+                /* Determine the size of the data */
+                *data_size = (blank_cnt - 7U);
 
-     if (created_ok == true)
-     {
-         retval = FROGFS_ERR_OK;
-     }
-     else if (io_error == true)
-     {
-         /* retval contains the latest io-error */
-         FROGFS_DEBUG_VERBOSE("storage error %d", retval);
-     }
-     else
-     {
-         FROGFS_DEBUG_VERBOSE("storage is full or too fragmented");
-         retval = FROGFS_ERR_NOSPACE;
-     }
+                FROGFS_DEBUG_VERBOSE("space found at 0x%04x", *space_start);
+                FROGFS_DEBUG_VERBOSE("write offset set at 0x%04x", *data_start);
+                FROGFS_DEBUG_VERBOSE("of size 0x%04x", *data_size);
+
+                /* Override error: it is "ok" even if NOSPACE or other non fatal error
+                 * e.g. I/O error on some bytes at the end of the storage while other bytes
+                 * are correctly accessible -> go on and allocate as necessary. */
+                // TODO: maybe an API to check "storage" sanity i.e. these uncaught / masked
+                // errors could be interesting for an application demanding high reliability
+                retval = FROGFS_ERR_OK;
+
+                /* Finally, exit the loop */
+                break;
+            }
+            else
+            {
+                blank_cnt = 0;
+            }
+        } /* End of zero-find condition */
+
+    } while(1);
 
     return retval;
 }
@@ -540,6 +565,12 @@ t_e_frogfs_error frogfs_open(uint8_t record)
     t_e_frogfs_error retval = FROGFS_ERR_IO;
     uint8_t tmp[3];
 
+#ifdef FROGFS_FORCE_INIT_AT_EVERY_OPEN
+    FROGFS_DEBUG_VERBOSE("Unit Testing Enabled. You shall not see that normally.");
+    retval = frogfs_init();
+    FROGFS_ASSERT_VERBOSE(retval, FROGFS_ERR_OK, "not ok that init does not work.");
+#endif
+
     FROGFS_DEBUG_VERBOSE("%s: record %d", __FUNCTION__, record);
 
     /* Check if the file exists or not */
@@ -571,6 +602,12 @@ t_e_frogfs_error frogfs_open(uint8_t record)
                     /* Write */
                     retval = storage_write(tmp, 3);
                 }
+            }
+            else
+            {
+                /* No Space (more likely happening) or IO error */
+                FROGFS_DEBUG_VERBOSE("could not allocate spaced.");
+                printf_frogfserror(retval);
             }
         }
     }

@@ -35,6 +35,7 @@ t_e_frogfs_error storage_close(void);
 void             storage_sync(void);
 uint16_t         storage_size(void);
 t_e_frogfs_error storage_advance(uint16_t size);
+t_e_frogfs_error storage_backtrack(uint16_t size);
 t_e_frogfs_error storage_pos(uint16_t *offset);
 t_e_frogfs_error storage_end_of_storage(void);
 t_e_frogfs_error storage_seek(uint16_t offset);

@@ -30,6 +30,10 @@
 
 #include <stdbool.h>
 
+#ifdef FROGFS_UNIT_TESTING
+#define FROGFS_FORCE_INIT_AT_EVERY_OPEN
+#endif
+
 /** The simplistic design needs to avoid zero's in the metadata block,
  *  especially at the beginning as the free space allocator cannot
  *  distinguish a metadata versus empty space otherwise.
@@ -59,7 +63,6 @@ typedef struct
 } t_s_frogfsram_record;
 
 t_e_frogfs_error frogfs_format(void);
-bool             frogfs_is_nil(const uint8_t *data, uint16_t size);
 t_e_frogfs_error frogfs_init(void);
 t_e_frogfs_error frogfs_find_contiguous_space(uint16_t *space_start, uint16_t *data_start, uint16_t *data_size);
 t_e_frogfs_error frogfs_list(uint8_t *list, uint8_t list_size, uint8_t *file_num);

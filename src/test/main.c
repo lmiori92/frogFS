@@ -726,25 +726,25 @@ int frogfs_execute_test(void)
 {
     t_e_frogfs_error fserr;
 
-    FROGFS_DEBUG_VERBOSE("test_contiguous");
+    FROGFS_DEBUG_VERBOSE("START: test_contiguous");
     test_contiguous();
-    FROGFS_DEBUG_VERBOSE("test_reopen");
+    FROGFS_DEBUG_VERBOSE("START: test_reopen");
     test_reopen();
-    FROGFS_DEBUG_VERBOSE("test_contiguous_and_remove");
+    FROGFS_DEBUG_VERBOSE("START: test_contiguous_and_remove");
     test_contiguous_and_remove();
-    FROGFS_DEBUG_VERBOSE("test_contiguous_and_remove_at_end");
+    FROGFS_DEBUG_VERBOSE("START: test_contiguous_and_remove_at_end");
     test_contiguous_and_remove_at_end();
-    FROGFS_DEBUG_VERBOSE("test_record_limit");
+    FROGFS_DEBUG_VERBOSE("START: test_record_limit");
     test_record_limit();
-    FROGFS_DEBUG_VERBOSE("test_fragmentation");
+    FROGFS_DEBUG_VERBOSE("START: test_fragmentation");
     test_fragmentation();
-    FROGFS_DEBUG_VERBOSE("test_0_byte_record");
+    FROGFS_DEBUG_VERBOSE("START: test_0_byte_record");
     test_0_byte_record();
-    FROGFS_DEBUG_VERBOSE("test_use_case_settings");
+    FROGFS_DEBUG_VERBOSE("START: test_use_case_settings");
     test_use_case_settings(true, true);
-    FROGFS_DEBUG_VERBOSE("test_unclosed_file");
+    FROGFS_DEBUG_VERBOSE("START: test_unclosed_file");
     test_unclosed_file();
-    FROGFS_DEBUG_VERBOSE("test_file0_and_file1");
+    FROGFS_DEBUG_VERBOSE("START: test_file0_and_file1");
     test_file0_and_file1();
 
     fserr = storage_close();
