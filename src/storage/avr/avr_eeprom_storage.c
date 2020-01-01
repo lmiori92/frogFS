@@ -58,6 +58,27 @@ t_e_frogfs_error storage_advance(uint16_t size)
         eeprom_pos += size;
         retval = FROGFS_ERR_OK;
     }
+    else
+    {
+        retval = FROGFS_ERR_NOSPACE;
+    }
+
+    return retval;
+}
+
+t_e_frogfs_error storage_backtrack(uint16_t size)
+{
+    t_e_frogfs_error retval = FROGFS_ERR_IO;
+
+    if ((uint16_t)eeprom_pos >= size)
+    {
+        eeprom_pos -= size;
+        retval = FROGFS_ERR_OK;
+    }
+    else
+    {
+        retval = FROGFS_ERR_NOSPACE;
+    }
 
     return retval;
 }
@@ -109,6 +130,11 @@ t_e_frogfs_error storage_read(uint8_t *data, uint16_t size)
         retval = FROGFS_ERR_OK;
         eeprom_pos += size;
     }
+    else
+    {
+        /* Out of physical storage */
+        retval = FROGFS_ERR_NOSPACE;
+    }
 
     return retval;
 }
@@ -124,6 +150,11 @@ t_e_frogfs_error storage_write(const uint8_t *data, uint16_t size)
         eeprom_write_block(data, (void*)eeprom_pos, size);
         retval = FROGFS_ERR_OK;
         eeprom_pos += size;
+    }
+    else
+    {
+        /* Out of physical storage */
+        retval = FROGFS_ERR_NOSPACE;
     }
 
     return retval;
