@@ -637,7 +637,7 @@ t_e_frogfs_error frogfs_write(uint8_t record, const uint8_t *data, uint16_t size
     uint16_t data_start;
     uint16_t data_size;
 
-    FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, record, size);
+    FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, (uint16_t)record, (uint16_t)size);
 
     /* Check if the file exists or not */
     if ((record < FROGFS_MAX_RECORD_COUNT) && (size <= FROGFS_MAX_RECORD_SIZE))
@@ -869,7 +869,7 @@ t_e_frogfs_error frogfs_traverse(uint8_t record, uint8_t *data, uint16_t size, u
 
     *effective_read = 0;
 
-    FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, record, size);
+    FROGFS_DEBUG_VERBOSE("%s: record %d size %d", __FUNCTION__, (uint16_t)record, (uint16_t)size);
 
     /* Check if the file exists or not */
     if ((record < FROGFS_MAX_RECORD_COUNT) && (size <= FROGFS_MAX_RECORD_SIZE))
